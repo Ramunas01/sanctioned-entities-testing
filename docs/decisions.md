@@ -71,6 +71,24 @@ before building on it.
   until the probe shows bucketing is stable.** If unstable, #4 is blocked on an
   Add-on fix, not on us.
 
+> **AMENDED 2026-06-11 (post-probe).** The probe disproved the "presence-in-either-
+> bucket" immunity claim: a known-listed party (`EXPORT MATERIALS, INC.`) returned
+> **both buckets empty** on 1 of 5 identical runs — a whole-result *dropout*, not a
+> reshuffle. "HIT = codes ∪ possible_codes" does not save that case.
+> - **Census is NOT immune.** A single-pass census can fabricate a miss.
+> - **Fix — run the census with repetition:** query each name **N=5** times;
+>   HIT = hit on *any* run (union over runs); record per-name **hit-rate**
+>   (5/5 stable · 4/5 "present, flaky retrieval" · 0/5 true miss). Converts the
+>   instability from a confound into a measured reliability number.
+> - **The dropout is a Severity-1 Add-on defect on its own** (Finding #6) — a
+>   screening tool that intermittently returns nothing for a listed party will, by
+>   timing alone, clear a sanctioned counterparty.
+> - **#4 stays blocked** until the dropout rate is quantified and bucketing
+>   characterized. Measured so far: empty-result rate = **1/240 (0.42%)** of
+>   known-listed (name,run) pairs, confined to one name; identity fork (true
+>   dropout vs spurious fuzzy hit) under investigation
+>   (`reports/export-materials-identity.md`).
+
 ---
 
 ## DR-PR5 — Merge the oracle, but not on the author's say-so
@@ -89,6 +107,24 @@ pass that does **not** reuse the parser's logic:
 (`docs/oracle-review-sample.md` — 41 rows incl. multi-program parties up to 8
 codes, each paired with its raw source row). Then merge.
 
+> **AMENDED 2026-06-11 (Advisor review complete — CLEARED TO MERGE).** All 41
+> sample rows verified: (1) cell-for-cell fidelity on all 6 verbatim columns;
+> (2) multi-program collapse lossless (the 8-code row 4061 and all three 6-code
+> rows preserve every code in source order); (3) index alignment holds at row 0
+> and row 25766 (no off-by-one across the span); `strong_alias` invariant
+> self-consistent. **The verbatim parse is approved to merge.**
+>
+> **Fast-follow required BEFORE alias consumption (see Findings F1/F2):** the
+> oracle must emit a *normalized alias list* via a documented, **sublist-aware**
+> split — semicolon default, **comma for ISN / State-Nonproliferation** — that
+> strips empty-equivalents (`[]`, whitespace-only, trailing tokens). Keep the
+> verbatim string alongside for audit. This split is now the riskiest
+> deterministic transform in the oracle → it gets its own independent review pass.
+>
+> **Decomposition (nothing stalls):** **#3 primary-name census may start
+> immediately** (`primary_name` has none of these hazards); **#3 alias census
+> waits** on the fast-follow.
+
 ---
 
 ## DR-REPRO — Pin the Add-on, not just the oracle
@@ -102,3 +138,36 @@ updates cause drift and phantom misses. Harness requirements:
 - Run the full census in **one tight window**.
 - If the Add-on can be pinned to a date, pin it to **2026-06-10** to match the
   oracle.
+
+---
+
+## Findings from the PR #5 review (F1–F4)
+
+Raised by the Advisor while reviewing `docs/oracle-review-sample.md`. These are
+**not** parse infidelities (the verbatim parse passed) — they are hazards in how
+#3/#4 *consume* the data.
+
+- **F1 — Alias delimiter is not uniform across sublists. (Top finding.)** Most
+  sublists semicolon-delimit aliases, but **State-Dept Nonproliferation (ISN)**
+  rows comma-delimit them (sample row 330). And semicolon values contain internal
+  commas (`CHINA TELECOM CO., LTD`). So no single split is safe: split on `;` only
+  → every ISN row collapses into one un-queryable mega-alias (real aliases like
+  `KCST` never tested → false NO-HITs); also split on `,` → `CO., LTD` shreds into
+  junk queries. A naive split under-queries the State/nonprolif sublist and
+  over-queries the rest. **→ Drives the alias-normalization fast-follow; a hard
+  #3 acceptance criterion.**
+- **F2 — Empty-equivalent alias tokens corrupt `strong_alias` and become junk
+  vectors.** Row 1279 stores the literal `[]`; row 1724 is `Michael Martelly; `
+  with a trailing empty token. Both are semantically empty but counted non-empty,
+  so they get `strong_alias = unknown` wrongly and would push the query `[]` to
+  the census. The invariant "non-empty string ⇒ has aliases" is the flaw.
+  **→ Fixed in the same fast-follow (strip empty-equivalents).**
+- **F3 — `start_date` format inconsistent (verbatim-correct, unsafe to consume).**
+  Almost all ISO; DPL row 3102 is ` 8/11/2015` (leading space, US M/D/YYYY).
+  Verbatim is right for the oracle — just don't parse `start_date` as ISO until a
+  normalization pass runs. Low impact (not a match field). Already noted as the
+  oracle's known date anomaly.
+- **F4 — BIS/State rows carry no `programs` or `entity_type`** (expected for the
+  trade.gov aggregate). Consequence (confirms DR-0): **the census must reconcile
+  by `source_sublist`, not by `programs`**, or the entire BIS/State half looks
+  like a coverage hole that isn't one. **A hard #3 acceptance criterion.**
