@@ -1,0 +1,12 @@
+sublist,class,label_method,n,definite,flaky,possible_only,miss
+SDN,entity,entity_type,150,150,0,0,0
+SDN,vessel,entity_type,50,50,0,0,0
+SDN,aircraft,entity_type,50,50,0,0,0
+SDN,person,entity_type,100,99,1,0,0
+SSI,entity,entity_type,150,150,0,0,0
+EL,entity,heuristic,150,150,0,0,0
+EL,person,heuristic,100,100,0,0,0
+MEU,entity,heuristic,66,66,0,0,0
+MEU,person,heuristic,4,4,0,0,0
+NS-MBS,entity,entity_type,11,11,0,0,0
+NS-MBS,person,entity_type,1,1,0,0,0

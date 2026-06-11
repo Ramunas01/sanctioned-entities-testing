@@ -8,7 +8,15 @@ Add-on served version `2026-06-11` (`version_date` inert — DR-REPRO).
 > A1 → §3 root cause · A3 → §3 net defect list · A2 → §4 · A4 → §3 numbers · A5 → §5.
 
 ## 1. Summary / verdict
-_(one paragraph: is the US/CSL integration fit for purpose? headline = DPL recall gap, pending A1+A3 severity resolution.)_
+The US/CSL integration recalls **person records and entity records reliably across every
+tested US sublist except one**. The **BIS Denied Persons List (DPL) entity-ingestion path
+is defective**: **280 currently-listed denied parties** (18.4% of DPL, disproportionately
+companies) return **no match across 5 repeated queries**, all confirmed present in today's
+source. The failure is **silent** — DPL works for persons and for the majority, so nothing
+signals the gap. It is **scoped to the DPL feed**: SDN, SSI, the BIS Entity List, MEU and
+NS-MBS all recall entities at ~100% (0 misses in 527 entity names tested). **Severity: Sev-1,
+scoped to DPL feed entity handling.** Two secondary Add-on defects (non-determinism #6,
+generic-token false positives #8) are documented but do not change this verdict.
 
 ## 2. Method
 Two-track: **Presence = census** (every primary name + strong alias → HIT/NO-HIT/ERROR),
@@ -63,8 +71,31 @@ machine-parseable). (`reports/provenance_audit.md`. Verdict rests on the documen
 payload + the live identity capture; agent's fresh calls were sandbox-blocked — operator
 can run `harness/provenance_probe.py` to refresh the verbatim inventory.)
 
-## 5. Statistical assurance (other sublists)
-_(A5 overnight: ~300/sublist on SDN, SSI, EL, MEU, NS-MBS → ≤~1% miss bound at 95% (rule of three), vs the pilot's ~11% bound.)_
+## 5. Statistical assurance — is the entity defect DPL-only or systemic? (A5)
+Entity-oversampled census of the trade-critical sublists, 832 names × 5 = **4,160 calls,
+0 errors, `version_used` stable `2026-06-11`**. Classes labeled by **ground-truth
+`entity_type`** where present (SDN/SSI/NS-MBS); corporate-suffix **heuristic** only where
+empty (EL/MEU). Vessel/aircraft kept on their own lines.
+
+| Sublist | class | method | n | definite | miss |
+|---|---|---|--:|--:|--:|
+| SDN | entity | entity_type | 150 | 100% | 0% |
+| SDN | vessel | entity_type | 50 | 100% | 0% |
+| SDN | aircraft | entity_type | 50 | 100% | 0% |
+| SDN | person | entity_type | 100 | 99% | 0% |
+| SSI | entity | entity_type | 150 | 100% | 0% |
+| EL | entity | heuristic | 150 | 100% | 0% |
+| EL | person | heuristic | 100 | 100% | 0% |
+| MEU | entity | heuristic | 66 | 100% | 0% |
+| MEU | person | heuristic | 4 | 100% | 0% |
+| NS-MBS | entity | entity_type | 11 | 100% | 0% |
+| NS-MBS | person | entity_type | 1 | 100% | 0% |
+
+**Verdict: the entity-ingestion defect is DPL-ONLY.** Zero entity misses in 527 entity
+names across five other sublists (rule of three → <0.6% entity-miss at 95% CI for the
+527-name pool), versus **30.7% on DPL**. Critically, the **BIS Entity List recalls entities
+at 100%** — so the failure is not "entities," "BIS feeds," or "the entity class," but the
+**DPL ingestion path specifically**. `reports/expanded_census.csv`.
 
 ## 6. Known Add-on defects (Behavior, partial — #4 blocked)
 - Finding #6 (Sev-2): bucket-churn non-determinism (`codes`↔`possible_codes`). Blocks #4 threshold testing.
@@ -75,8 +106,17 @@ _(A5 overnight: ~300/sublist on SDN, SSI, EL, MEU, NS-MBS → ≤~1% miss bound 
 **ingestion** defect, not a harness artifact and not name-format sensitivity: retrieval
 controls pass, and 10/10 tested misses stay missing under both verbatim and human-simplified
 queries (`reports/dpl_harness_disconfirmation.md`). A screening tool that silently fails to
-return live denied parties clears them by name. _Final magnitude + the net real-defect count
-(A3-full) fill in once the completed sweep merges; Advisor to finalize wording._
+return live denied parties clears them by name.
+
+**Final (A5-scoped):** The US/CSL integration correctly recalls person records and all
+tested OFAC sublists **and the BIS Entity List**, but the Denied Persons List
+entity-ingestion path is defective: **280 currently-listed denied parties (18.4% of DPL,
+disproportionately companies) return no match across repeated queries, confirmed present in
+the current source.** Because the DPL check works for the majority and for persons, the gap
+**fails silently**. **Sev-1, scoped to the DPL feed's entity handling. Remediation:
+entity-record ingestion for the DPL source.** (Had A5 shown other sublists' entities also
+missing, this would have escalated to a US integration-wide entity-ingestion failure; it did
+not.)
 
 ## 8. Caveats / limitations
 - `version_date` inert — point-in-time queries unavailable; campaign run in one tight window.
