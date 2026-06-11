@@ -18,9 +18,23 @@ observed churn). Census run N=5× per name → per-name hit-rate. Reconcile by `
 
 ## 3. Coverage findings (Presence)
 ### 3.1 Per-sublist recall
-_(A4 numbers: full DPL census counts per class; pilot's 100% on the other 11 sublists; A5 bound.)_
-- Pilot (n≈26/sublist): 11 sublists 100% stable-definite; **DPL 35% stable-definite** (Finding #9).
-- Full DPL sweep (A4): _<fill: definite / flaky / possible-only / miss counts over 1,596>._
+- Pilot (n≈26/sublist): 11 sublists 100% stable-definite; DPL the lone outlier (Finding #9).
+- **Full DPL sweep — authoritative, all 1,520 unique DPL names × 5 (gate-4 verified,
+  `version_used` stable `2026-06-11`):**
+
+  | Class | n=1,520 | % |
+  |---|--:|--:|
+  | 5/5 definite | 730 | 48.0 |
+  | flaky (1–4/5) | 266 | 17.5 |
+  | `possible_codes`-only (weak/unverified) | 244 | 16.1 |
+  | **0/5 MISS** | **280** | **18.4** |
+  | **never stable-definite** | 790 | **52.0** |
+
+  **Person/entity cross-tab** (DPL has no `entity_type`; corporate-suffix heuristic):
+  PERSON (n=1,162) miss **14.6%** / never-definite 47.0%; ENTITY (n=358) miss **30.7%**
+  / never-definite 68.2% — entities ~2.1× worse. Persons-by-complexity (plain vs
+  parenthetical/AKA/>3-token) miss **identically** (≈14–15%), so the defect is
+  entity-class, not string-normalization (corroborates gate 1's 0/10 formatting).
 
 ### 3.2 Root cause — whole-sublist omission vs record-level gap
 **Verdict (A1, PM-verified): RECORD-LEVEL gap, not whole-sublist omission.** Of the 22
@@ -32,12 +46,12 @@ normalization. ⇒ DPL data is ingested but coverage is **partial and unstable**
 a missing sublist. (`reports/dpl_crosslist.csv`.)
 
 ### 3.3 Net defect list (defect vs stale-oracle)
-**A3-preview (4 known pilot misses): all 4 are real DEFECTS, 0 stale.** Each is present in
-a **freshly downloaded** trade.gov CSL (today) yet missed 0/5 by the Add-on. The plausible
-staleness confound is overturned: although all four are *expired* denial orders
-(end_dates 2003–2019), trade.gov still carries them, so expiry does not delist them.
-(CSL search API unavailable — 401, no key; current file is dispositive.)
-`reports/dpl_miss_active_status.csv`. _Full net-defect list pending A4 miss-list → A3-full._
+**A3-full (all 280 DPL misses vs the current trade.gov source): 280/280 are real
+DEFECTS, 0 stale. NET REAL-DEFECT COUNT = 280.** Every 0/5 miss is a *currently-listed*
+party present in today's freshly downloaded CSL yet returned by the Add-on on no run.
+The staleness confound is fully overturned at scale (A3-preview's 4/4 held across all
+280). `reports/dpl_miss_active_status_full.csv`. (CSL search API unavailable — 401, no
+key; current downloadable file is dispositive.)
 
 ## 4. Output provenance (spec requirement)
 **Verdict (A2): requirement MET.** A hit-response code payload carries record provenance
@@ -57,7 +71,12 @@ _(A5 overnight: ~300/sublist on SDN, SSI, EL, MEU, NS-MBS → ≤~1% miss bound 
 - Finding #8: generic-token false positives + masked recall (EXPORT MATERIALS).
 
 ## 7. Severity & recommendation
-_(resolves once §3.2 + §3.3 land: Sev-1 ingestion failure vs scope/staleness reclassification.)_
+**Sev-1 (confirmed real, gate 1 cleared).** The DPL recall gap is a genuine Add-on
+**ingestion** defect, not a harness artifact and not name-format sensitivity: retrieval
+controls pass, and 10/10 tested misses stay missing under both verbatim and human-simplified
+queries (`reports/dpl_harness_disconfirmation.md`). A screening tool that silently fails to
+return live denied parties clears them by name. _Final magnitude + the net real-defect count
+(A3-full) fill in once the completed sweep merges; Advisor to finalize wording._
 
 ## 8. Caveats / limitations
 - `version_date` inert — point-in-time queries unavailable; campaign run in one tight window.

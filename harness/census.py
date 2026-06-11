@@ -130,6 +130,23 @@ POSITIVE_CONTROL_SPURIOUS_CODES = {"1145893", "1145895"}
 
 REPORT_BASENAME = "census-pilot.md"   # reports/census-pilot.md
 
+# --------------------------------------------------------------------------- #
+# Issue #3 / Advisor A4 — FULL DPL census sweep                                #
+# --------------------------------------------------------------------------- #
+# Run ALL distinct Denied Persons List (DPL) primary names × N=5, plus two
+# controls, in one tight window. Reuses the pilot's HIT definition, per-name
+# classification, version-stability guard, retry/concurrency machinery. Adds:
+#   - DPL_TP_CONTROL: a TRUE-POSITIVE control — an SDN-sublist primary name that
+#     scored 5/5-definite (codes non-empty all runs) in the pilot. Expect 5/5
+#     definite; if it reads 0/5 the harness is BROKEN and we must not publish.
+#   - per-name "definite" classification (codes non-empty across all OK runs),
+#     distinct from the union-based "hit" classification, so we can report
+#     5/5-definite / flaky / possible-only / MISS exactly per the task.
+DPL_SUBLIST_PREFIX = "Denied Persons List"
+DPL_TP_CONTROL = "DEMCHENKO, Ivan Ivanovich"   # SDN, 5/5-definite in the pilot
+DPL_TP_CONTROL_EXPECTED_CODES = {"1123129", "1137415"}
+DPL_CSV_BASENAME = "dpl_full_census.csv"        # reports/dpl_full_census.csv
+
 
 # --------------------------------------------------------------------------- #
 # Paths (stdin-runnable: derive from cwd, not __file__)                       #
@@ -757,6 +774,250 @@ def write_report(analysis: dict, jsonl_path: str, selected: list[dict],
 
 
 # --------------------------------------------------------------------------- #
+# Issue #3 / A4 — FULL DPL census sweep: selection, classification, CSV report #
+# --------------------------------------------------------------------------- #
+
+def select_dpl_full(rows: list[dict]) -> list[dict]:
+    """Select ALL distinct DPL primary names plus both controls.
+
+    DPL is identified by ``source_sublist`` starting with ``"Denied Persons
+    List"`` (F4: reconcile by sublist). Names are deduplicated by exact
+    ``primary_name`` (the unit the Add-on queries — a name appearing on N DPL
+    listings produces identical match output, so querying it once suffices;
+    duplicate listing rows are collapsed, mirroring ``select_names``). Sorted for
+    a stable, reproducible order.
+
+    Two controls are force-included (deduplicated against the DPL set):
+      - NEGATIVE control ``EXPORT MATERIALS, INC.`` (a DPL name; expect 0/5
+        definite — spurious-only per Finding #8).
+      - TRUE-POSITIVE control ``DEMCHENKO, Ivan Ivanovich`` (an SDN name that was
+        5/5-definite in the pilot; expect 5/5 definite — a live harness check).
+    """
+    dpl_names: dict[str, dict] = {}
+    tp_row = None
+    neg_row = None
+    for row in rows:
+        sub = row["source_sublist"]
+        name = row["primary_name"]
+        if sub.startswith(DPL_SUBLIST_PREFIX):
+            dpl_names.setdefault(name, row)
+        if name == DPL_TP_CONTROL and tp_row is None:
+            tp_row = row
+        if name == POSITIVE_CONTROL and neg_row is None:
+            neg_row = row
+
+    selected: list[dict] = []
+    for name in sorted(dpl_names.keys()):
+        row = dpl_names[name]
+        kind = "negative-control" if name == POSITIVE_CONTROL else "listed"
+        selected.append({
+            "name": name,
+            "source_sublist": row["source_sublist"],
+            "entity_type": row["entity_type"],
+            "programs": row["programs"],
+            "kind": kind,
+        })
+
+    # Ensure NEGATIVE control present & labelled (it is a DPL name; normally in set).
+    if POSITIVE_CONTROL not in dpl_names and neg_row is not None:
+        selected.append({
+            "name": POSITIVE_CONTROL,
+            "source_sublist": neg_row["source_sublist"],
+            "entity_type": neg_row["entity_type"],
+            "programs": neg_row["programs"],
+            "kind": "negative-control",
+        })
+
+    # Force-include the TRUE-POSITIVE control (SDN; not a DPL name).
+    if tp_row is None:
+        sys.exit(f"ERROR: TP control {DPL_TP_CONTROL!r} not found in oracle.")
+    selected.append({
+        "name": DPL_TP_CONTROL,
+        "source_sublist": tp_row["source_sublist"],
+        "entity_type": tp_row["entity_type"],
+        "programs": tp_row["programs"],
+        "kind": "tp-control",
+    })
+    return selected
+
+
+def classify_definite(runs: list[dict]) -> dict:
+    """Per-name DPL classification per the A4 task (separate from classify_name).
+
+    Definitions (HIT = codes ∪ possible_codes, DR-D2):
+      - 5/5-definite : ``codes`` non-empty on ALL N OK runs (and N OK runs).
+      - flaky        : HIT on some runs but not all (retrieval flakiness).
+      - possible-only: HIT on every OK run, but ``codes`` empty on every run
+                       (only ever a weak ``possible_codes`` match).
+      - MISS         : 0/N — both buckets empty on every OK run.
+    Records definite-runs and hit-runs counts.
+    """
+    ok = [r for r in runs if r["error"] is None]
+    err = [r for r in runs if r["error"] is not None]
+    n_ok = len(ok)
+    hits = sum(1 for r in ok if (r["codes"] or r["possible_codes"]))
+    definite = sum(1 for r in ok if r["codes"])
+
+    union_codes: set[str] = set()
+    union_possible: set[str] = set()
+    for r in ok:
+        union_codes.update(r["codes"] or [])
+        union_possible.update(r["possible_codes"] or [])
+
+    if n_ok == 0:
+        cls = "ALL-ERROR"
+    elif hits == 0:
+        cls = "MISS"
+    elif definite == n_ok and n_ok == N:
+        cls = "5/5-definite"
+    elif definite > 0:
+        # some definite codes, but not on every one of the N runs
+        cls = "flaky"
+    elif hits == n_ok:
+        # hit every OK run but never a definite codes match
+        cls = "possible-only"
+    else:
+        # hit on some runs, never definite (mix of weak hits and misses)
+        cls = "flaky"
+
+    return {
+        "name": runs[0]["name"],
+        "sublist": runs[0]["sublist"],
+        "kind": runs[0]["kind"],
+        "n_runs": len(runs),
+        "n_ok": n_ok,
+        "n_err": len(err),
+        "hits": hits,
+        "definite": definite,
+        "classification": cls,
+        "union_codes": sorted(union_codes),
+        "union_possible": sorted(union_possible),
+    }
+
+
+def write_dpl_csv(captures: list[dict], analysis: dict, jsonl_path: str,
+                  paths: dict) -> dict:
+    """Write reports/dpl_full_census.csv: one row per DPL name + summary block +
+    delimited MISS list and possible-only list. Returns a summary dict."""
+    by_name: dict[str, list[dict]] = defaultdict(list)
+    for rec in captures:
+        by_name[rec["name"]].append(rec)
+
+    per_name = {n: classify_definite(sorted(r, key=lambda x: x["run"]))
+                for n, r in by_name.items()}
+
+    # Controls.
+    neg = next((c for c in per_name.values() if c["kind"] == "negative-control"), None)
+    tp = next((c for c in per_name.values() if c["kind"] == "tp-control"), None)
+
+    # DPL listed names only (exclude the SDN TP control; the negative control IS
+    # a DPL name and stays in the DPL population).
+    dpl = sorted((c for c in per_name.values() if c["kind"] != "tp-control"),
+                 key=lambda c: c["name"])
+
+    counts = {"5/5-definite": 0, "flaky": 0, "possible-only": 0,
+              "MISS": 0, "ALL-ERROR": 0}
+    for c in dpl:
+        counts[c["classification"]] = counts.get(c["classification"], 0) + 1
+
+    misses = sorted((c for c in dpl if c["classification"] == "MISS"),
+                    key=lambda c: c["name"])
+    possible_only = sorted((c for c in dpl if c["classification"] == "possible-only"),
+                           key=lambda c: c["name"])
+    flakies = sorted((c for c in dpl if c["classification"] == "flaky"),
+                     key=lambda c: c["name"])
+
+    n_dpl = len(dpl)
+    # Recall = share of DPL names that reached a definite codes match on every run.
+    recall = (100.0 * counts["5/5-definite"] / n_dpl) if n_dpl else 0.0
+
+    now = _dt.datetime.now(_dt.timezone.utc).isoformat()
+    out_path = os.path.join(paths["reports_dir"], DPL_CSV_BASENAME)
+    os.makedirs(paths["reports_dir"], exist_ok=True)
+
+    with open(out_path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        # --- Summary block (commented header). ---
+        w.writerow(["# Issue #3 / A4 — FULL DPL primary-name census"])
+        w.writerow([f"# generated: {now}"])
+        w.writerow([f"# raw_capture: {os.path.relpath(jsonl_path, paths['root'])}"])
+        w.writerow([f"# harness: harness/census.py (mode=dpl-full, N={N}, "
+                    f"concurrency={MAX_CONCURRENCY})"])
+        w.writerow([f"# dpl_names_tested: {n_dpl}"])
+        w.writerow([f"# total_calls: {analysis['total_calls']}  "
+                    f"errors: {analysis['total_errors']}"])
+        w.writerow([f"# version_used_start: {analysis['version_start']}  "
+                    f"end: {analysis['version_end']}  "
+                    f"stable: {analysis['version_stable']}  "
+                    f"invalidated: {analysis['invalidated']}"])
+        w.writerow([f"# class_counts: 5/5-definite={counts['5/5-definite']}  "
+                    f"flaky={counts['flaky']}  "
+                    f"possible-only={counts['possible-only']}  "
+                    f"MISS={counts['MISS']}"
+                    + (f"  ALL-ERROR={counts['ALL-ERROR']}" if counts['ALL-ERROR'] else "")])
+        w.writerow([f"# DPL_recall_5/5_definite: {recall:.2f}%  "
+                    f"({counts['5/5-definite']}/{n_dpl})"])
+        neg_form = (f"{neg['definite']}/{neg['n_ok']} definite, "
+                    f"class={neg['classification']}") if neg else "MISSING"
+        tp_form = (f"{tp['definite']}/{tp['n_ok']} definite, "
+                   f"class={tp['classification']}") if tp else "MISSING"
+        neg_pass = bool(neg and neg["definite"] == 0)
+        tp_pass = bool(tp and tp["definite"] == tp["n_ok"] and tp["n_ok"] == N)
+        w.writerow([f"# NEGATIVE_control [{POSITIVE_CONTROL}]: {neg_form} -> "
+                    f"{'PASS (0/5 definite as expected)' if neg_pass else 'FAIL'}"])
+        w.writerow([f"# TRUE_POSITIVE_control [{DPL_TP_CONTROL}]: {tp_form} -> "
+                    f"{'PASS (5/5 definite as expected)' if tp_pass else 'FAIL — HARNESS BROKEN'}"])
+        w.writerow([])
+        # --- One row per DPL name. ---
+        w.writerow(["primary_name", "source_sublist", "hit_status_class",
+                    "definite_runs", "hit_runs", "n_ok_runs", "n_err",
+                    "kind", "codes_union", "possible_codes_union"])
+        for c in dpl:
+            w.writerow([
+                c["name"], c["sublist"], c["classification"],
+                f"{c['definite']}/{c['n_ok']}", f"{c['hits']}/{c['n_ok']}",
+                c["n_ok"], c["n_err"], c["kind"],
+                ";".join(c["union_codes"]), ";".join(c["union_possible"]),
+            ])
+        # --- Delimited MISS list (consumed by task A3). ---
+        w.writerow([])
+        w.writerow([f"### BEGIN MISS LIST (0/5 — definite recall gaps; "
+                    f"{len(misses)} names) — for task A3 ###"])
+        w.writerow(["miss_primary_name", "source_sublist", "hit_runs"])
+        for c in misses:
+            w.writerow([c["name"], c["sublist"], f"{c['hits']}/{c['n_ok']}"])
+        w.writerow(["### END MISS LIST ###"])
+        # --- Delimited possible-only list. ---
+        w.writerow([])
+        w.writerow([f"### BEGIN POSSIBLE-ONLY LIST (hit every run but never a "
+                    f"definite codes match; {len(possible_only)} names) ###"])
+        w.writerow(["possible_only_primary_name", "source_sublist",
+                    "hit_runs", "possible_codes_union"])
+        for c in possible_only:
+            w.writerow([c["name"], c["sublist"], f"{c['hits']}/{c['n_ok']}",
+                        ";".join(c["union_possible"])])
+        w.writerow(["### END POSSIBLE-ONLY LIST ###"])
+
+    return {
+        "csv_path": out_path,
+        "dpl_names_tested": n_dpl,
+        "total_calls": analysis["total_calls"],
+        "total_errors": analysis["total_errors"],
+        "counts": counts,
+        "recall_5_5_definite_pct": recall,
+        "miss_count": len(misses),
+        "possible_only_count": len(possible_only),
+        "flaky_count": len(flakies),
+        "version_start": analysis["version_start"],
+        "version_end": analysis["version_end"],
+        "version_stable": analysis["version_stable"],
+        "invalidated": analysis["invalidated"],
+        "neg_control": neg_form, "neg_control_pass": neg_pass,
+        "tp_control": tp_form, "tp_control_pass": tp_pass,
+    }
+
+
+# --------------------------------------------------------------------------- #
 # Main                                                                          #
 # --------------------------------------------------------------------------- #
 
@@ -766,6 +1027,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--full", action="store_true",
                     help="STUB: run the complete census (ALL distinct names per "
                          "sublist, ~25,767 names). Large — validate the pilot first.")
+    ap.add_argument("--dpl-full", action="store_true",
+                    help="A4: run the FULL DPL sweep — ALL distinct Denied "
+                         "Persons List primary names + negative + true-positive "
+                         "controls, N=5. Writes reports/dpl_full_census.csv.")
     ap.add_argument("--dry-run", action="store_true",
                     help="Print the selected sample and exit (no HTTP calls).")
     ap.add_argument("--analyze-only", metavar="JSONL",
@@ -775,10 +1040,40 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     paths = resolve_paths(args.repo_root)
+    rows = load_rows(paths["expected_csv"])
+
+    # --- A4: FULL DPL sweep -------------------------------------------------- #
+    if args.dpl_full:
+        selected = select_dpl_full(rows)
+        n_dpl = sum(1 for s in selected if s["kind"] != "tp-control")
+        if args.dry_run:
+            print(f"Mode: dpl-full   DPL names (incl negative control): {n_dpl}   "
+                  f"+1 TP control   Calls if run: {len(selected) * N}  (N={N})")
+            for s in selected:
+                if s["kind"] != "listed":
+                    print(f"  control[{s['kind']}]: {s['name']}  ({s['source_sublist']})")
+            return 0
+        ts = _dt.datetime.now(_dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        jsonl_path = os.path.join(paths["results_dir"], f"dpl-full-census-{ts}.jsonl")
+        print(f"DPL-full census: {len(selected)} names "
+              f"({n_dpl} DPL + 1 TP control) × N={N} = "
+              f"{len(selected) * N} calls, concurrency={MAX_CONCURRENCY}.",
+              file=sys.stderr)
+        captures = run_census(selected, jsonl_path)
+        analysis = analyze(captures)
+        summary = write_dpl_csv(captures, analysis, jsonl_path, paths)
+        print("\n=== DPL-FULL SUMMARY ===")
+        print(json.dumps(summary, indent=2))
+        if not summary["tp_control_pass"]:
+            print("\n*** TP CONTROL FAILED — HARNESS BROKEN — DPL numbers NOT trustworthy ***",
+                  file=sys.stderr)
+        print(f"\nRaw: {jsonl_path}")
+        print(f"CSV: {summary['csv_path']}")
+        return 0
+
     mode = "full" if args.full else "pilot"
     per_sublist = None if args.full else PILOT_PER_SUBLIST
 
-    rows = load_rows(paths["expected_csv"])
     selected = select_names(rows, per_sublist)
 
     if args.dry_run:
