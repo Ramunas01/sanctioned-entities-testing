@@ -22,10 +22,14 @@ currently-listed denied parties is Sev-1 regardless. Two secondary Add-on defect
 verdict.
 
 ## 2. Method
-Two-track: **Presence = census** (every primary name + strong alias → HIT/NO-HIT/ERROR),
-**Behavior = sampled vectors**. HIT = `codes` ∪ `possible_codes` (DR-D2, census immune to
-observed churn). Census run N=5× per name → per-name hit-rate. Reconcile by `source_sublist`
-(F4). Reproducibility: `version_used` start/end guard (DR-REPRO).
+Two-track: **Presence = census**, **Behavior = sampled vectors**. This report covers the
+**primary-name census**: every listed party's `primary_name` → HIT/NO-HIT/ERROR. The
+**alias-based census is deferred** to the #7 alias-normalization fast-follow (the CSL has no
+strong/weak alias flag — `strong_alias` is `unknown` for every row, DR-D1 — and alias
+normalization is itself a reviewed transform; see §8), so no alias was pushed to the Add-on
+here. HIT = `codes` ∪ `possible_codes` (DR-D2, census immune to observed churn). Census run
+N=5× per name → per-name hit-rate. Reconcile by `source_sublist` (F4). Reproducibility:
+`version_used` start/end guard (DR-REPRO).
 
 ## 3. Coverage findings (Presence)
 ### 3.1 Per-sublist recall
@@ -41,12 +45,18 @@ observed churn). Census run N=5× per name → per-name hit-rate. Reconcile by `
   | **0/5 MISS** | **280** | **18.4** |
   | **never stable-definite** | 790 | **52.0** |
 
-  **Two findings within DPL** (DPL has no `entity_type`; corporate-suffix heuristic):
-  - **Finding 9a — entities (primary):** ENTITY (n=358) miss **30.7%** / never-definite 68.2%.
-  - **Finding 9b — persons (secondary, not negligible):** PERSON (n=1,162) miss **14.6%** /
-    never-definite 47.0%. ~1 in 7 listed denied *persons* is also missed — versus ~0% on
-    every other US feed (§5). So the DPL feed is under-ingested for **both** record types,
-    entities ~2.1× worse; this is a **feed** defect with an entity skew, not entity-only.
+  **Two findings within DPL.** DPL rows have no `entity_type`, so person/entity here is a
+  **corporate-suffix heuristic** label, not ground truth (this matters for the cross-sublist
+  comparison — see the like-for-like note in §5):
+  - **Finding 9a — entities (primary):** **110 of 358** entity names miss (**30.7%**) /
+    never-definite 68.2%.
+  - **Finding 9b — persons (secondary, not negligible):** **170 of 1,162** person names miss
+    (**14.6%**) / never-definite 47.0%. ~1 in 7 listed denied *persons* is also missed —
+    versus ~0% on every other US feed (§5). The DPL feed is under-ingested for **both** record
+    types, entities ~2.1× worse; a **feed** defect with an entity skew, not entity-only.
+  - **Reconciliation:** 110 entity misses + 170 person misses = **280** — the headline 0/5
+    miss count (§3.3). (Earlier interim figures on partial sweeps differ; these are the final
+    1,520-name numbers.)
 
   Persons-by-complexity (plain vs parenthetical/AKA/>3-token) miss **identically** (≈14–15%),
   so the gap is **not string-normalization** (corroborates gate 1's 0/10 formatting) — it is
@@ -75,9 +85,13 @@ redundantly: **`meta.issuer`** (e.g. `US`), **`envelope_filename`** (source data
 program, e.g. `reg-us-russia-eo14024.json`), and **`information`** (inline legal authority,
 e.g. `Listed: 2022-02-25 (EO 14024)`). Spec asks for source **or** a legal reference; the
 Add-on supplies both. Caveat: the legal reference is free-text (human-checkable, not
-machine-parseable). (`reports/provenance_audit.md`. Verdict rests on the documented §3
-payload + the live identity capture; agent's fresh calls were sandbox-blocked — operator
-can run `harness/provenance_probe.py` to refresh the verbatim inventory.)
+machine-parseable). **Verified live (PM, 2026-06-12)** against two hits — DPL
+`ADRIAN MANUEL HERNANDEZ` → code 1155166, `meta.issuer=US`,
+`envelope_filename=reg-us-csl-itar.json`, `information` carries Federal Register Notice
+`83 FR 18112`; SDN `GRACHEV, Pavel Sergeyevich` → code 1139334, `meta.issuer=US`,
+`envelope_filename=reg-us-russia-eo14024.json`, party-specific aliases/birthdate. Both
+party-specific, so **MET is confirmed on live captures, not the documented payload alone**.
+(`reports/provenance_audit.md`.)
 
 ## 5. Statistical assurance — is the entity defect DPL-only or systemic? (A5)
 Entity-oversampled census of the trade-critical sublists, 832 names × 5 = **4,160 calls,
@@ -111,6 +125,12 @@ as **per-sublist 95% upper bounds** (rule of three, 0/n → ≤3/n), not pooled:
 | NS-MBS | 0 / 11 | ≤27% (full entity population — sublist is tiny) |
 
 — versus **30.7% on DPL**, non-overlapping by a wide margin for SDN/SSI/EL.
+
+**Like-for-like note:** DPL's 30.7% is **heuristic**-labeled (BIS rows have no `entity_type`)
+while these bounds are mostly **ground-truth**. The comparison is therefore **shape-matched,
+not definition-matched** — valid because the ground-truth recalling samples contain DPL's
+exact name shapes (suffix-less, punctuated; next paragraph), not because the two labels share
+a definition.
 
 **SDN/SSI (ground-truth `entity_type`) carry the comparison; EL/MEU only corroborate.** The
 ground-truth samples contain the *same name shapes DPL misses*: SDN entities are **75%
