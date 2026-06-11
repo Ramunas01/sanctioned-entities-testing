@@ -7,9 +7,9 @@
       "name": "consolidated_screening_list",
       "url": "https://data.trade.gov/downloadable_consolidated_screening_list/v1/consolidated.csv",
       "local_path": "oracle/source/consolidated.csv",
-      "downloaded_at_utc": null,
-      "sha256": null,
-      "row_count": null
+      "downloaded_at_utc": "2026-06-11T16:30:02Z",
+      "sha256": "63b6a9aa7b257879ef0afb4bef8e3dc739040521934c8e7c6302b0cd669e1485",
+      "row_count": 25767
     }
   ]
 }
