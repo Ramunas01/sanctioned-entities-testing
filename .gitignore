@@ -7,6 +7,9 @@ oracle/source/*.zip
 results/**/*.jsonl
 results/**/*.json
 results/**/*.csv
+results/*.jsonl
+results/*.json
+results/*.csv
 !results/.gitkeep
 
 # Python
