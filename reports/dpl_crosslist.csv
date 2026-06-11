@@ -1,0 +1,31 @@
+# Normalization N(s): NFKC -> casefold -> replace each maximal run of non-(letter/digit) chars with a single space -> strip.
+# Same-entity iff: N(primaryA)==N(primaryB) OR one primary is in the other's alias-set OR alias-sets intersect.
+# Alias-set = {N(a) for a in aliases split on "; "}; ALSO split on "," for ISN/Nonproliferation sublists (Finding F1).
+# Over-merge guards: ignore keys empty / <4 chars / single dictionary-common word; if a DPL name matches MULTIPLE distinct non-DPL entities -> uncertain.
+dpl_name,hit_status,also_on_non_DPL,matched_sublists,match_basis
+ALI ABDULLAH AHMED ALHAY,5/5-definite,N,,
+"ALL PORTS, INCORPORATED",5/5-definite,N,,
+ANDY LLOYD HUEBSCHMANN,5/5-definite,N,,
+"BLACK, SIVALLS & BRYSON (UK) LTD",0-5 MISS,N,,
+DAVID BANIAMERI,5/5-definite,Y,ITAR Debarred (DTC),Aprimary in Balias
+DAVID IRWIN PORTNOY,possible-only,N,,
+DMITRY N. CHERNYSHENKO,possible-only,N,,
+"EDSONS WORLDWIDE SERVICES, INC",possible-only,N,,
+ELECTROCOM,flaky,N,,
+ELI ESPINOZA,5/5-definite,N,,
+"EXPORT MATERIALS, INC.",possible-only,N,,
+IAN ACE,possible-only,N,,
+ITEX-WAVE FZCO,0-5 MISS,N,,
+JERRY VERNON FORD,5/5-definite,N,,
+JUAN MANUEL CERVANTES-ACEVES,5/5-definite,N,,
+KATSUTA KEISUKE,possible-only,N,,
+KHALDOUN HEJAZI,possible-only,N,,
+KHALID JARRAH,5/5-definite,N,,
+KOLOKOL (AKA: ALDRICH AMES),0-5 MISS,N,,
+MAN CHUNG TONG,possible-only,N,,
+MUHAMMAD KAMRAN WALI,possible-only,N,,
+SAMMY SMITH,possible-only,N,,
+STEPHEN EDWARD SMITH,5/5-definite,Y,ITAR Debarred (DTC),primary==primary
+SUSAN Y.GIMM,possible-only,N,,
+"TATOS, FRED",0-5 MISS,N,,
+WEN ENTERPRISES,possible-only,N,,
