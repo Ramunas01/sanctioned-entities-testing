@@ -1,0 +1,15 @@
+{
+  "_comment": "Reproducibility manifest. Filled by the Issue #2 oracle parser when it downloads and freezes the source. Do not hand-edit hashes.",
+  "addon_served_version": "2026-06-10",
+  "ingestion_lag_days": 1,
+  "sources": [
+    {
+      "name": "consolidated_screening_list",
+      "url": "https://data.trade.gov/downloadable_consolidated_screening_list/v1/consolidated.csv",
+      "local_path": "oracle/source/consolidated.csv",
+      "downloaded_at_utc": null,
+      "sha256": null,
+      "row_count": null
+    }
+  ]
+}
