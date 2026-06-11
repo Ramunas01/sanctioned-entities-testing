@@ -168,7 +168,30 @@ entity records worst).** (Had A5 shown other sublists' entities also missing, th
 escalated to a US integration-wide failure; it did not — the scope is narrow, the severity is
 not.)
 
+*Mechanism — probe-confirmed (PM, 2026-06-12): ingestion, not retrieval.* The pipeline is
+two-stage (exact `keyword` → Meilisearch fuzzy @ `similarity_threshold` 0.7, `max_candidates`
+5). For missed DPL entities, querying the record's **unique distinctive token** (`ALPHATRONX`,
+`ADAERO`, `ROSENTHAL`) returns `no_match`/empty, while **generic tokens** (`CHEMICAL`,
+`LOGISTICS`) reliably return 5 *unrelated* candidates — so the retrieval stages function and
+the index is populated, but the missed records are **absent from the index**. An indexed
+`ALPHATRONX` would be a 1.0 exact-keyword match (far above 0.7) yet returns nothing. This
+isolates the defect to **ingestion** (records never loaded), not the 0.7/max-5 retrieval
+threshold — gate 1's disconfirmation was consistent with either; this probe separates them.
+(Direct index read-access would confirm definitively; this is strong inference.)
+
 ## 8. Caveats / limitations
 - `version_date` inert — point-in-time queries unavailable; campaign run in one tight window.
 - Alias census deferred to the #7 normalization fast-follow.
 - DPL "hits" include `possible_codes`-only matches that may be spurious (generic-token, Finding #8).
+- **Record-level `valid_from` is inconsistently populated (source-specific).** Empty for
+  State-Dept **ITAR/DTC** records (`reg-us-csl-itar.json`, e.g. `ADRIAN MANUEL HERNANDEZ`),
+  but populated for OFAC records (`GRACHEV` 2023-05-19, `HANIYA` 2006-04-12, China Telecom
+  2021-01-08). The endpoint advertises `valid_from`/`valid_to` date-range filtering; for the
+  ITAR/DTC source that filter has no record-level basis and would fall back to the batch
+  (`envelope`) date. **Owner question.** (Note: corrects an initial "all records empty" read —
+  only the ITAR/DTC envelope is affected among those checked.)
+- **Endpoint labeled "EU Sanctions Person (Regulations)" but serves US records.** The connector
+  header reads "EU" yet returns US data (`meta.issuer=US`, `reg-us-csl-itar.json`), keyed by
+  `version_date` — almost certainly a shared EU/US endpoint with a cosmetic label. Loose thread,
+  not a finding: if the chatbot wrapper routes by that label, a US query could in principle hit
+  an EU-scoped path. **Owner question:** confirm US/EU share this endpoint and the label is cosmetic.
