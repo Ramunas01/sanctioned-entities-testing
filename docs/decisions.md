@@ -71,23 +71,28 @@ before building on it.
   until the probe shows bucketing is stable.** If unstable, #4 is blocked on an
   Add-on fix, not on us.
 
-> **AMENDED 2026-06-11 (post-probe).** The probe disproved the "presence-in-either-
-> bucket" immunity claim: a known-listed party (`EXPORT MATERIALS, INC.`) returned
-> **both buckets empty** on 1 of 5 identical runs — a whole-result *dropout*, not a
-> reshuffle. "HIT = codes ∪ possible_codes" does not save that case.
-> - **Census is NOT immune.** A single-pass census can fabricate a miss.
-> - **Fix — run the census with repetition:** query each name **N=5** times;
->   HIT = hit on *any* run (union over runs); record per-name **hit-rate**
->   (5/5 stable · 4/5 "present, flaky retrieval" · 0/5 true miss). Converts the
->   instability from a confound into a measured reliability number.
-> - **The dropout is a Severity-1 Add-on defect on its own** (Finding #6) — a
->   screening tool that intermittently returns nothing for a listed party will, by
->   timing alone, clear a sanctioned counterparty.
-> - **#4 stays blocked** until the dropout rate is quantified and bucketing
->   characterized. Measured so far: empty-result rate = **1/240 (0.42%)** of
->   known-listed (name,run) pairs, confined to one name; identity fork (true
->   dropout vs spurious fuzzy hit) under investigation
->   (`reports/export-materials-identity.md`).
+> **AMENDED 2026-06-11 (post-probe → CORRECTED after identity check).**
+> *Initial read (now retracted):* a listed party (`EXPORT MATERIALS, INC.`)
+> returned both buckets empty on 1/5 runs, read as a whole-result *dropout*.
+> *Identity probe corrected this* (`reports/export-materials-identity.md`, 15/15
+> runs): the non-empty runs were **spurious matches on different parties** — codes
+> `1145893`/`1145895` are unrelated Chinese firms matched only on the generic
+> tokens "Export"/"Material"; the correct party was matched in **0/15** runs. So:
+> - **The empty result was CORRECT.** The defects are **false positives from
+>   generic-token overlap** (precision) and a **recall gap** — the listed party is
+>   never retrieved (coverage). Neither is a dropout. Filed as Finding #8; the
+>   earlier Sev-1 "dropout" framing on #6 is retracted.
+> - **Census immunity — re-examined.** Bucket churn (a code moving
+>   codes↔possible) does **not** break "HIT = codes ∪ possible_codes" (the union
+>   is unchanged), and all 45 stable queries had stable unions. We have **no
+>   evidence** a *correctly-matched* party's union is non-deterministic, so the
+>   original DR-D2 immunity claim plausibly **holds**. The "not immune" reasoning
+>   rested on the misread EXPORT MATERIALS case. **→ to Advisor to confirm.**
+> - **Still run the census N=5×** — not because non-immunity is proven, but to
+>   *measure* per-name recall reliability and empirically catch any real dropout /
+>   flaky retrieval (5/5 stable · 4/5 flaky · 0/5 miss). Sound regardless.
+> - **Bucket-churn non-determinism (ACHEKZAI / AL-KHAFAJI) remains real and still
+>   blocks #4** — that part of Finding #6 stands.
 
 ---
 
