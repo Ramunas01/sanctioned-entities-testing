@@ -13,10 +13,13 @@ tested US sublist except one**. The **BIS Denied Persons List (DPL) entity-inges
 is defective**: **280 currently-listed denied parties** (18.4% of DPL, disproportionately
 companies) return **no match across 5 repeated queries**, all confirmed present in today's
 source. The failure is **silent** — DPL works for persons and for the majority, so nothing
-signals the gap. It is **scoped to the DPL feed**: SDN, SSI, the BIS Entity List, MEU and
-NS-MBS all recall entities at ~100% (0 misses in 527 entity names tested). **Severity: Sev-1,
-scoped to DPL feed entity handling.** Two secondary Add-on defects (non-determinism #6,
-generic-token false positives #8) are documented but do not change this verdict.
+signals the gap. Entities are hit hardest (30.7% miss) but **persons are also missed (14.6%)**, so it is a DPL
+**feed** defect, not entity-only. It is **DPL-scoped**: SDN, SSI, the BIS Entity List, MEU and
+NS-MBS recall entities with 0 misses in 527 names (per-sublist 95% bounds in §5). **Severity:
+Sev-1** — the DPL scope is a *fix-pointer*, not a severity discount; 280 silently-missed,
+currently-listed denied parties is Sev-1 regardless. Two secondary Add-on defects
+(non-determinism #6, generic-token false positives #8) are documented but do not change this
+verdict.
 
 ## 2. Method
 Two-track: **Presence = census** (every primary name + strong alias → HIT/NO-HIT/ERROR),
@@ -38,11 +41,16 @@ observed churn). Census run N=5× per name → per-name hit-rate. Reconcile by `
   | **0/5 MISS** | **280** | **18.4** |
   | **never stable-definite** | 790 | **52.0** |
 
-  **Person/entity cross-tab** (DPL has no `entity_type`; corporate-suffix heuristic):
-  PERSON (n=1,162) miss **14.6%** / never-definite 47.0%; ENTITY (n=358) miss **30.7%**
-  / never-definite 68.2% — entities ~2.1× worse. Persons-by-complexity (plain vs
-  parenthetical/AKA/>3-token) miss **identically** (≈14–15%), so the defect is
-  entity-class, not string-normalization (corroborates gate 1's 0/10 formatting).
+  **Two findings within DPL** (DPL has no `entity_type`; corporate-suffix heuristic):
+  - **Finding 9a — entities (primary):** ENTITY (n=358) miss **30.7%** / never-definite 68.2%.
+  - **Finding 9b — persons (secondary, not negligible):** PERSON (n=1,162) miss **14.6%** /
+    never-definite 47.0%. ~1 in 7 listed denied *persons* is also missed — versus ~0% on
+    every other US feed (§5). So the DPL feed is under-ingested for **both** record types,
+    entities ~2.1× worse; this is a **feed** defect with an entity skew, not entity-only.
+
+  Persons-by-complexity (plain vs parenthetical/AKA/>3-token) miss **identically** (≈14–15%),
+  so the gap is **not string-normalization** (corroborates gate 1's 0/10 formatting) — it is
+  feed ingestion.
 
 ### 3.2 Root cause — whole-sublist omission vs record-level gap
 **Verdict (A1, PM-verified): RECORD-LEVEL gap, not whole-sublist omission.** Of the 22
@@ -91,11 +99,29 @@ empty (EL/MEU). Vessel/aircraft kept on their own lines.
 | NS-MBS | entity | entity_type | 11 | 100% | 0% |
 | NS-MBS | person | entity_type | 1 | 100% | 0% |
 
-**Verdict: the entity-ingestion defect is DPL-ONLY.** Zero entity misses in 527 entity
-names across five other sublists (rule of three → <0.6% entity-miss at 95% CI for the
-527-name pool), versus **30.7% on DPL**. Critically, the **BIS Entity List recalls entities
-at 100%** — so the failure is not "entities," "BIS feeds," or "the entity class," but the
-**DPL ingestion path specifically**. `reports/expanded_census.csv`.
+**Verdict: the defect is DPL-ONLY.** Zero entity misses on every other US sublist, reported
+as **per-sublist 95% upper bounds** (rule of three, 0/n → ≤3/n), not pooled:
+
+| Sublist | entity misses | 95% upper bound on entity-miss |
+|---|---|---|
+| SDN | 0 / 150 | ≤2.0% |
+| SSI | 0 / 150 | ≤2.0% |
+| EL | 0 / 150 | ≤2.0% |
+| MEU | 0 / 66 | ≤4.5% (≈ full entity population of the sublist) |
+| NS-MBS | 0 / 11 | ≤27% (full entity population — sublist is tiny) |
+
+— versus **30.7% on DPL**, non-overlapping by a wide margin for SDN/SSI/EL.
+
+**SDN/SSI (ground-truth `entity_type`) carry the comparison; EL/MEU only corroborate.** The
+ground-truth samples contain the *same name shapes DPL misses*: SDN entities are **75%
+suffix-less** (e.g. `ADMINISTRADORA DE INMUEBLES VIDA, S.A. DE C.V.` — a company the
+heuristic would mislabel as a person), SSI 25%, with punctuation throughout — yet recall at
+100%. DPL misses are 61% suffix-less / 19% punctuated, so the recalling samples cover DPL's
+hard cases. EL/MEU use the suffix-requiring heuristic and so cannot include suffix-less
+names; they corroborate for suffix-bearing/punctuated entities (EL 35/150 punctuated, all
+recalled) but do not themselves carry the claim. Either way the failure is the **DPL
+ingestion path specifically**, not 'entities', 'BIS feeds', or name shape.
+`reports/expanded_census.csv`.
 
 ## 6. Known Add-on defects (Behavior, partial — #4 blocked)
 - Finding #6 (Sev-2): bucket-churn non-determinism (`codes`↔`possible_codes`). Blocks #4 threshold testing.
@@ -108,14 +134,18 @@ controls pass, and 10/10 tested misses stay missing under both verbatim and huma
 queries (`reports/dpl_harness_disconfirmation.md`). A screening tool that silently fails to
 return live denied parties clears them by name.
 
-**Final (A5-scoped):** The US/CSL integration correctly recalls person records and all
-tested OFAC sublists **and the BIS Entity List**, but the Denied Persons List
-entity-ingestion path is defective: **280 currently-listed denied parties (18.4% of DPL,
-disproportionately companies) return no match across repeated queries, confirmed present in
-the current source.** Because the DPL check works for the majority and for persons, the gap
-**fails silently**. **Sev-1, scoped to the DPL feed's entity handling. Remediation:
-entity-record ingestion for the DPL source.** (Had A5 shown other sublists' entities also
-missing, this would have escalated to a US integration-wide entity-ingestion failure; it did
+**Final.** The US/CSL integration correctly recalls persons and entities across all tested
+OFAC sublists **and the BIS Entity List**, but the **DPL feed is under-ingested**: **280
+currently-listed denied parties (18.4% of DPL) return no match across repeated queries,
+confirmed present in the current source.** Entities are hit hardest (30.7% miss) but
+**persons are also affected (14.6%)**, so the gap is the DPL *feed*, not an entity-only
+quirk. Because DPL works for the majority and for most persons, it **fails silently**.
+
+**Severity: Sev-1.** The DPL scope is a **fix-pointer — where the bug is — not a severity
+discount**: 280 silently-missed, currently-listed denied parties is Sev-1 regardless of how
+many feeds are affected. **Remediation: the DPL source ingestion path (all record types;
+entity records worst).** (Had A5 shown other sublists' entities also missing, this would have
+escalated to a US integration-wide failure; it did not — the scope is narrow, the severity is
 not.)
 
 ## 8. Caveats / limitations
