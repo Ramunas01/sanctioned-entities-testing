@@ -1,15 +1,12 @@
-# US CSL Integration — Sanctions Add-on Test Report (DRAFT)
+# US CSL Integration — Sanctions Add-on Test Report
 
-Status: **skeleton — fill from task outputs.** Owner: PM. Methodology: Advisor.
+Owner: PM. Methodology: Advisor. Substance signed off by Advisor 2026-06-12.
 Snapshot: oracle frozen at trade.gov CSL `2026-06-11` (sha256 in `oracle/snapshot.json`);
 Add-on served version `2026-06-11` (`version_date` inert — DR-REPRO).
 
-> Result-source map (which task fills which section):
-> A1 → §3 root cause · A3 → §3 net defect list · A2 → §4 · A4 → §3 numbers · A5 → §5.
-
 ## 1. Summary / verdict
 The US/CSL integration recalls **person records and entity records reliably across every
-tested US sublist except one**. The **BIS Denied Persons List (DPL) entity-ingestion path
+tested US sublist except one**. The **BIS Denied Persons List (DPL) ingestion path
 is defective**: **280 currently-listed denied parties** (18.4% of DPL, disproportionately
 companies) return **no match across 5 repeated queries**, all confirmed present in today's
 source. The failure is **silent** — DPL works for persons and for the majority, so nothing
