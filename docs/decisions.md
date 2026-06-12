@@ -87,7 +87,11 @@ before building on it.
 >   is unchanged), and all 45 stable queries had stable unions. We have **no
 >   evidence** a *correctly-matched* party's union is non-deterministic, so the
 >   original DR-D2 immunity claim plausibly **holds**. The "not immune" reasoning
->   rested on the misread EXPORT MATERIALS case. **→ to Advisor to confirm.**
+>   rested on the misread EXPORT MATERIALS case.
+>   **CONFIRMED by Advisor 2026-06-11: the census IS immune to the observed
+>   bucket-churn** (union over `codes`∪`possible_codes` is stable for
+>   correctly-matched parties). The N=5× repetition is retained as a recall-
+>   reliability *measurement*, not because non-immunity was shown.
 > - **Still run the census N=5×** — not because non-immunity is proven, but to
 >   *measure* per-name recall reliability and empirically catch any real dropout /
 >   flaky retrieval (5/5 stable · 4/5 flaky · 0/5 miss). Sound regardless.

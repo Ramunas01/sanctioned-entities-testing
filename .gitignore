@@ -3,9 +3,13 @@ oracle/source/*.csv
 oracle/source/*.xml
 oracle/source/*.zip
 
-# Raw run captures can be large/numerous
+# Raw run captures can be large/numerous (incl. scratch source re-downloads)
 results/**/*.jsonl
 results/**/*.json
+results/**/*.csv
+results/*.jsonl
+results/*.json
+results/*.csv
 !results/.gitkeep
 
 # Python
