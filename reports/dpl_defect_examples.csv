@@ -1,21 +1,21 @@
-primary_name,class,name_shape,present_in_consolidated_csv,index_probe,match_request_url
-A. ROSENTHAL (PTY) LTD.,entity,punctuated,Y,absent (unique-token probe),https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=A.+ROSENTHAL+%28PTY%29+LTD.
+primary_name,class_heuristic,name_shape,present_in_consolidated_csv,verification,match_request_url
+A. ROSENTHAL (PTY) LTD.,entity,punctuated,Y,index-probe: absent,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=A.+ROSENTHAL+%28PTY%29+LTD.
 ABAN AIR,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=ABAN+AIR
 AC AVIATIE UK LIMITED,entity,suffix-bearing,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=AC+AVIATIE+UK+LIMITED
-"ADAERO INTERNATIONAL TRADE, LLC",entity,punctuated,Y,absent (unique-token probe),https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=ADAERO+INTERNATIONAL+TRADE%2C+LLC
-AEROCARGO DEL SUR TRANSPORTATION COMPANY,entity,suffix-bearing,Y,absent (unique-token probe),https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=AEROCARGO+DEL+SUR+TRANSPORTATION+COMPANY
+"ADAERO INTERNATIONAL TRADE, LLC",entity,punctuated,Y,index-probe: absent,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=ADAERO+INTERNATIONAL+TRADE%2C+LLC
+AEROCARGO DEL SUR TRANSPORTATION COMPANY,entity,suffix-bearing,Y,index-probe: absent,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=AEROCARGO+DEL+SUR+TRANSPORTATION+COMPANY
 AKN PRASAD,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=AKN+PRASAD
 ALI KHANAMAN MOHAMMADI,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=ALI+KHANAMAN+MOHAMMADI
-ALINDA CHEMICAL TRADE COMPANY LTD,entity,suffix-bearing,Y,absent (unique-token probe),https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=ALINDA+CHEMICAL+TRADE+COMPANY+LTD
-"ALPHATRONX, INC.",entity,punctuated,Y,absent (unique-token probe),https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=ALPHATRONX%2C+INC.
+ALINDA CHEMICAL TRADE COMPANY LTD,entity,suffix-bearing,Y,index-probe: absent,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=ALINDA+CHEMICAL+TRADE+COMPANY+LTD
+"ALPHATRONX, INC.",entity,punctuated,Y,index-probe: absent,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=ALPHATRONX%2C+INC.
 AMANCIO J. ABELAIRAS,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=AMANCIO+J.+ABELAIRAS
-APELSIN LOGISTICS INC.,entity,suffix-bearing,Y,absent (unique-token probe),https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=APELSIN+LOGISTICS+INC.
+APELSIN LOGISTICS INC.,entity,suffix-bearing,Y,index-probe: absent,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=APELSIN+LOGISTICS+INC.
 APPELBERG FINANCIAL SERVICES,entity,suffix-bearing,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=APPELBERG+FINANCIAL+SERVICES
 ASSEGAI TRADING (PTY) LTD,entity,punctuated,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=ASSEGAI+TRADING+%28PTY%29+LTD
 AVIONET,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=AVIONET
 BAO AN CORPORATION,entity,suffix-bearing,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=BAO+AN+CORPORATION
 BILL CHEN,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=BILL+CHEN
-"BLACK, SIVALLS & BRYSON (UK) LTD",entity,punctuated,Y,confirmed 0/5 (A3 active-status),https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=BLACK%2C+SIVALLS+%26+BRYSON+%28UK%29+LTD
+"BLACK, SIVALLS & BRYSON (UK) LTD",entity,punctuated,Y,A3 active-status: confirmed 0/5,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=BLACK%2C+SIVALLS+%26+BRYSON+%28UK%29+LTD
 CAE SERVICES,entity,suffix-bearing,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=CAE+SERVICES
 CELLTRON MKTG CO.,entity,suffix-bearing,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=CELLTRON+MKTG+CO.
 CIRRUS ELECTRONICS LLC,entity,suffix-bearing,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=CIRRUS+ELECTRONICS+LLC
@@ -44,7 +44,7 @@ HELLING KG,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_per
 IBERAIR LINES,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=IBERAIR+LINES
 INDUSTRIA HONG KONG LTD,entity,suffix-bearing,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=INDUSTRIA+HONG+KONG+LTD
 IT WAVE FZCO,entity,suffix-bearing,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=IT+WAVE+FZCO
-ITEX-WAVE FZCO,entity,suffix-bearing,Y,confirmed 0/5 (A3 active-status),https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=ITEX-WAVE+FZCO
+ITEX-WAVE FZCO,entity,suffix-bearing,Y,A3 active-status: confirmed 0/5,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=ITEX-WAVE+FZCO
 ITURRIDANIEL,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=ITURRIDANIEL
 JAMES MICHAEL CLARK,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=JAMES+MICHAEL+CLARK
 JFD INTERNATIONAL,entity,suffix-bearing,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=JFD+INTERNATIONAL
@@ -52,7 +52,7 @@ JIRAIR HIJIABADI AVANESSIAN,person,suffix-less,Y,,https://fast.customsclear.net/
 JOSEPH TALYI,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=JOSEPH+TALYI
 JUZHOI ELECTRONIC LLC,entity,suffix-bearing,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=JUZHOI+ELECTRONIC+LLC
 KIRILL GORDEI,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=KIRILL+GORDEI
-KOLOKOL (AKA: ALDRICH AMES),person,punctuated,Y,confirmed 0/5 (A3 active-status),https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=KOLOKOL+%28AKA%3A+ALDRICH+AMES%29
+KOLOKOL (AKA: ALDRICH AMES),person,punctuated,Y,A3 active-status: confirmed 0/5,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=KOLOKOL+%28AKA%3A+ALDRICH+AMES%29
 LEEJAMES,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=LEEJAMES
 LEV STEINBERG,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=LEV+STEINBERG
 LUFENG LIMITED,entity,suffix-bearing,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=LUFENG+LIMITED
@@ -87,7 +87,7 @@ SOCIETE ANONYME TECHNOLOGIE SPATIALE (SATS),entity,punctuated,Y,,https://fast.cu
 SSI,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=SSI
 "STRANDWAY, LLC",entity,punctuated,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=STRANDWAY%2C+LLC
 "SUPER NET COMPUTERS, L.L.C.",person,punctuated,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=SUPER+NET+COMPUTERS%2C+L.L.C.
-"TATOS, FRED",person,punctuated,Y,confirmed 0/5 (A3 active-status),https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=TATOS%2C+FRED
+"TATOS, FRED",person,punctuated,Y,A3 active-status: confirmed 0/5,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=TATOS%2C+FRED
 TECHNOLOGY BUSINESS SERVICES,entity,suffix-bearing,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=TECHNOLOGY+BUSINESS+SERVICES
 "TOP OIL TOOLS, LTD",entity,punctuated,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=TOP+OIL+TOOLS%2C+LTD
 TPC B.V.,person,suffix-less,Y,,https://fast.customsclear.net/api/sanctions_person_versions_regulations/match?query=TPC+B.V.
