@@ -192,3 +192,59 @@ threshold — gate 1's disconfirmation was consistent with either; this probe se
   `version_date` — almost certainly a shared EU/US endpoint with a cosmetic label. Loose thread,
   not a finding: if the chatbot wrapper routes by that label, a US query could in principle hit
   an EU-scoped path. **Owner question:** confirm US/EU share this endpoint and the label is cosmetic.
+
+## 9. Remediation handoff (for the Add-on team's PM / Advisor)
+
+Owner confirmed (A0): the Add-on ingests **`consolidated.csv`** (the same file this oracle
+froze — so the misses are genuine, not a source mismatch), the OFAC SDN advanced-XML extras
+are required and used heavily, and **the low DPL recall is a new/unknown defect.**
+
+### 9.1 What to reproduce
+- **280 unique DPL `primary_name`s return 0/5** (both buckets empty across 5 identical queries).
+  Full list: `reports/dpl_full_misslist.txt`. **Curated 100-example sample:
+  `reports/dpl_defect_examples.csv`** (55 entity / 45 person; suffix-less, suffix-bearing and
+  punctuated shapes; each row carries the exact `match` request URL). All 280 are present in
+  today's `consolidated.csv`.
+
+### 9.2 Mechanism — ingestion, not retrieval (start here)
+The pipeline is two-stage (`keyword` exact → Meilisearch fuzzy @ 0.7, max 5). Probing a missed
+record's **unique distinctive token** (`ALPHATRONX`, `ADAERO`, `ROSENTHAL`) returns
+`no_match`; **generic tokens** (`CHEMICAL`, `LOGISTICS`) return 5 unrelated candidates. The
+retrieval stages work and the index is populated — **the missed records are absent from the
+index.** Look at the **DPL ingestion/indexing path**, not the matcher or thresholds.
+
+### 9.3 Diagnostic clues (these narrow the search a lot)
+1. **DPL-specific.** Every other US sublist — including the BIS **Entity List** — recalls
+   ~100% (§5). So it is not the whole `consolidated.csv` loader; it is DPL-source rows.
+2. **DPL-vs-EL is the sharpest lever.** DPL and the Entity List are *both* BIS sub-lists with
+   empty `entity_type`/`programs` columns — yet **EL recalls 100% and DPL fails.** So empty
+   `entity_type` is **not** the cause. Diff how rows with `source = "Denied Persons List
+   (DPL) …"` are parsed/loaded versus `source = "Entity List (EL) …"`; the differentiator
+   lives there.
+3. **Entity-skew within DPL** (entities 30.7% miss vs persons 14.6%) → a *partial/probabilistic
+   drop* correlated with entity-shaped records, not a clean whole-source skip. Suggests a
+   per-row parse/key condition that entity rows hit more often.
+4. **Not name shape.** Gate-1 disconfirmation (10/10 misses stay missing under verbatim *and*
+   simplified queries) and the persons-by-complexity result (plain ≈ complex) rule out
+   punctuation / normalization.
+
+### 9.4 Suggested steps (need the index/DB access we don't have)
+1. **Confirm index absence** for the 280 (look them up directly in Meilisearch/DB). Expect absent.
+2. **Trace DPL ingestion** of `consolidated.csv` and compare to EL ingestion (9.3 #2).
+3. **Diff missing vs recalled DPL rows** field-by-field in `consolidated.csv` (the 280 missing
+   vs the ~730 recalled DPL names) to find the entity-correlated dropping condition.
+4. **Regression-gate the fix** with this repo: `harness/census.py` + the frozen oracle
+   reproduce the result deterministically; after a fix, re-run the DPL census → the 280 should
+   resolve. (`possible_codes`-only and flaky names should also firm up.)
+
+### 9.5 Adjacent scope question (from A0 #2, not part of the DPL fix)
+The owner requires the OFAC SDN advanced-XML extras (legal-authority metadata, maritime/aircraft
+blocking detail), but ingestion is `consolidated.csv` — the flattened aggregate, which does
+**not** carry those XML-only fields (nor per-alias strength, DR-D1). If those extras are truly
+required, `consolidated.csv`-only ingestion is a **separate scope gap** worth their Advisor's
+analysis — independent of, and not blocking, the DPL recall fix.
+
+### 9.6 Reusable assets in this repo
+`oracle/` (frozen source + deterministic parser) · `reports/dpl_full_misslist.txt` (all 280)
+· `reports/dpl_defect_examples.csv` (100-example sample) · `harness/census.py` (regression
+harness) · `reports/dpl_full_census.csv`, `reports/expanded_census.csv` (full per-class data).
