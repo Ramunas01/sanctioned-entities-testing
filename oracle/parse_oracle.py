@@ -64,7 +64,7 @@ SOURCE_FIELDNAMES = [
     "source_information_url", "ids",
 ]
 
-# --- the 7 normalized output columns -----------------------------------------
+# --- the 9 normalized output columns -----------------------------------------
 # (output column  <-  source column)        verbatim copy unless noted
 #  primary_name   <-  name
 #  aliases        <-  alt_names             CSL joins aliases with "; "
@@ -72,11 +72,34 @@ SOURCE_FIELDNAMES = [
 #  entity_type    <-  type                  "" preserved (BIS lists omit it)
 #  programs       <-  programs              CSL joins programs with "; "
 #  start_date     <-  start_date            "" preserved; verbatim, not reparsed
+#  end_date       <-  end_date              "" preserved; verbatim, not reparsed
+#  active         <-  (derived)             listing validity as of SNAPSHOT_DATE
+#                                           [end_date gap fix; see README]
 #  source_sublist <-  source                the CSL sub-list label
 EXPECTED_HEADER = [
     "primary_name", "aliases", "strong_alias", "entity_type",
-    "programs", "start_date", "source_sublist",
+    "programs", "start_date", "end_date", "active", "source_sublist",
 ]
+
+# The Add-on serves the snapshot as of this date; a listing is "active" when it
+# has no expiry (empty end_date) or an end_date on/after this date. Applying this
+# validity is the correction to Finding #9: expired denial orders are NOT census
+# misses -- the Add-on correctly excludes them. (Earlier oracle dropped end_date.)
+SNAPSHOT_DATE = datetime.date(2026, 6, 11)
+
+
+def derive_active(end_date):
+    """'yes' if the listing is active as of SNAPSHOT_DATE, 'no' if expired,
+    'unknown' if the date can't be parsed (flagged, never guessed)."""
+    s = (end_date or "").strip()
+    if not s:
+        return "yes"                       # no expiry -> active
+    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y"):
+        try:
+            return "yes" if datetime.datetime.strptime(s, fmt).date() >= SNAPSHOT_DATE else "no"
+        except ValueError:
+            pass
+    return "unknown"
 
 # Sentinels used to spot rows whose field count != len(SOURCE_FIELDNAMES).
 _EXTRA = "__EXTRA_FIELDS__"
@@ -123,13 +146,15 @@ def parse_row(row):
     strong_alias = "unknown" if aliases.strip() else ""
 
     expected_row = [
-        row["name"],        # primary_name   -- verbatim
-        aliases,            # aliases        -- verbatim ("; "-joined by source)
-        strong_alias,       # strong_alias   -- "unknown" | ""  [D1]
-        row["type"],        # entity_type    -- verbatim ("" preserved)
-        row["programs"],    # programs       -- verbatim ("; "-joined by source)
-        row["start_date"],  # start_date     -- verbatim, NOT reparsed
-        row["source"],      # source_sublist -- verbatim
+        row["name"],                    # primary_name   -- verbatim
+        aliases,                        # aliases        -- verbatim ("; "-joined)
+        strong_alias,                   # strong_alias   -- "unknown" | ""  [D1]
+        row["type"],                    # entity_type    -- verbatim ("" preserved)
+        row["programs"],                # programs       -- verbatim ("; "-joined)
+        row["start_date"],              # start_date     -- verbatim, NOT reparsed
+        row["end_date"],                # end_date       -- verbatim, NOT reparsed
+        derive_active(row["end_date"]), # active         -- derived validity
+        row["source"],                  # source_sublist -- verbatim
     ]
     return expected_row, None
 
