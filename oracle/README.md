@@ -7,7 +7,7 @@ snapshot and emits `expected.csv` (the table every later check diffs against),
 
 This is a **pure, deterministic parse**: no fuzzy logic, no matching, no
 inference, no guessing. The column *schema* is normalized (29 messy source
-columns → 7 documented columns); column *values* are copied **verbatim** so the
+columns → 9 documented columns); column *values* are copied **verbatim** so the
 oracle can be audited cell-by-cell against the raw CSV by a human/Advisor who is
 not the parser's author (oracle/checker separation).
 
@@ -59,7 +59,9 @@ which rows the census actually queries is the harness's job, not the oracle's.
 | 4 | `entity_type`    | `type`      | Verbatim: `Individual`, `Entity`, `Vessel`, `Aircraft`, or **empty**. Empty is a genuine source value (BIS sub-lists omit type); it is preserved, never inferred. |
 | 5 | `programs`       | `programs`  | Verbatim. The CSL joins multiple program codes with `"; "`. Empty when the source has none. |
 | 6 | `start_date`     | `start_date`| Verbatim — **not** reparsed or reformatted. Mostly ISO `YYYY-MM-DD`; mostly empty. See the date anomaly below. |
-| 7 | `source_sublist` | `source`    | Verbatim. The CSL sub-list label (one of the 12 below). |
+| 7 | `end_date`       | `end_date`  | Verbatim — listing expiry (e.g. a BIS denial-order term). Empty = no expiry. **Added 2026-06-15** (the Finding #9 correction — see below). |
+| 8 | `active`         | *(derived)* | `yes` if the listing is active as of `SNAPSHOT_DATE` (empty `end_date`, or `end_date` ≥ snapshot), `no` if expired, `unknown` if the date can't be parsed. The one downstream-applied validity rule. |
+| 9 | `source_sublist` | `source`    | Verbatim. The CSL sub-list label (one of the 12 below). |
 
 ### Normalization rules applied (the complete list)
 
@@ -94,6 +96,16 @@ Everything the parser does to a value is here — nothing is hidden:
 | 68 | Non-SDN Chinese Military-Industrial Complex Companies List (CMIC) — Treasury Department |
 | 12 | Non-SDN Menu-Based Sanctions List (NS-MBS List) — Treasury Department |
 | 1 | Capta List (CAP) — Treasury Department |
+
+### `end_date` / `active` — the Finding #9 correction (2026-06-15)
+
+The original oracle dropped the source `end_date`. The DPL census then expected **expired**
+denial orders to match and scored their (correct) exclusion by the Add-on as 280 "misses" —
+the basis of a withdrawn Sev-1 finding. The Add-on applies an **active-only date filter**
+(correct for a blocking screen): with `end_date`/`active` applied, **active-DPL recall is
+100%**. The parser now emits `end_date` (verbatim) and a derived `active` flag against
+`SNAPSHOT_DATE = 2026-06-11`. Downstream presence checks should treat only `active = yes`
+records as expected hits. See the report's retraction notice and §7.
 
 ### Known data anomaly (preserved, not "fixed")
 

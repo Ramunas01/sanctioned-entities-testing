@@ -22,3 +22,7 @@ venv/
 # Editor
 .vscode/
 .idea/
+results/*.txt
+results/*.log
+results/*.md
+results/*Zone.Identifier*
