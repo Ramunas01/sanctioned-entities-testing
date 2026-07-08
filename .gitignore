@@ -3,6 +3,10 @@ oracle/source/*.csv
 oracle/source/*.xml
 oracle/source/*.zip
 
+# UK working snapshot (~21 MB, refreshable -- NOT the frozen oracle source).
+# The manifest data/uk-snapshot.json IS tracked: it carries the hashes.
+data/*.xml
+
 # Raw run captures can be large/numerous (incl. scratch source re-downloads)
 results/**/*.jsonl
 results/**/*.json
