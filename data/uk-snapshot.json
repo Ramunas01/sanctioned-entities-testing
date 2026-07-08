@@ -1,0 +1,17 @@
+{
+  "source": {
+    "list": "UK Sanctions List (OFSI/FCDO consolidated designations)",
+    "url": "https://sanctionslist.fcdo.gov.uk/docs/UK-Sanctions-List.xml",
+    "landing_page": "https://www.gov.uk/government/publications/the-uk-sanctions-list",
+    "note": "Refreshable working snapshot. NOT the frozen oracle source."
+  },
+  "current": {
+    "fetched_at_utc": "2026-07-08T07:02:06Z",
+    "sha256": "09294883bee0e472558722211704b14f8380ea439f0b9232c5cef8b6fdbd646c",
+    "bytes": 21516813,
+    "date_generated": "07/07/2026",
+    "designation_count": 6271,
+    "last_modified_header": "Tue, 07 Jul 2026 11:55:23 GMT"
+  },
+  "history": []
+}

@@ -22,6 +22,23 @@ the new US data integration (Consolidated Screening List).
 | `results/`  | Timestamped raw run captures. |
 | `reports/`  | Census, behavioral diff, coverage, stats. |
 | `docs/`     | Test plan, interface contract, equivalence-class matrix, acceptance criteria. |
+| `data/`     | Refreshable working snapshots (UK Sanctions List). **Not** ground truth — see below. |
+
+## Other lists
+
+The US CSL above is the pinned, frozen oracle. The **UK Sanctions List** lives in
+`data/` as a *refreshable* snapshot and backs no census or ground-truth claim.
+To refresh it and extract what changed:
+
+```bash
+python3 harness/fetch_uk_list.py                                        # refresh
+python3 harness/uk_latest.py --against data/UK-Sanctions-List.prev.xml  # what was added
+```
+
+Use `--against`, not `--n 50`: "the newest N by designation date" is a different
+set from "what was added" (and can never show delistings). Full procedure, the
+alias/name derivation rules, and the three traps this XML sets:
+**`docs/uk-sanctions-refresh.md`**.
 
 ## Roles
 
